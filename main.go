@@ -42,6 +42,11 @@ func main() {
 
 	// 3. The HTTP Handler
 	http.HandleFunc("/ingest", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+	        http.Error(w, "Only POST is allowed", http.StatusMethodNotAllowed)
+	        return
+	    }
+
 		var payload LogPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
