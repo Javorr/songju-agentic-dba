@@ -1,55 +1,58 @@
 # Songju Agentic DBA
 
-A high-performance, AI-powered database observability engine that automatically detects and optimizes slow SQL queries — securely.
+A learning project exploring AI-assisted database observability.
 
-## What is this?
+## What it does
 
-Songju Agentic DBA is a **security-first database performance analyzer** that uses a multi-agent AI system to optimize SQL queries without ever exposing sensitive data. Think of it as an autonomous DBA that:
+Accepts HTTP POST requests with SQL query logs, masks sensitive data (PII), and publishes to NATS JetStream for asynchronous processing.
 
-- 🔒 **Masks PII automatically** — emails, SSNs, credit cards, and IDs are redacted before they leave your infrastructure
-- ⚡ **Handles 10,000+ logs/sec** — built with Go and NATS JetStream for microsecond-latency ingestion
-- 🤖 **Uses specialized AI agents** — a "Librarian" finds relevant schemas, a "Coder" suggests optimizations, and an "Executor" validates them safely
-- 🏗️ **Schema-blind security** — AI agents never see your actual data, only metadata and masked queries
+## What's implemented
 
-## Why I built this
+- Go HTTP server with `/ingest` and `/health` endpoints
+- PII masking for emails, SSNs, credit cards, numeric IDs, and UUIDs
+- NATS JetStream integration (creates stream, publishes messages)
+- Unit tests for PII masking
+- Docker and Docker Compose configuration
+- Benchmark definitions for PII masking function
 
-As databases grow and query performance becomes critical, DBAs are increasingly overwhelmed. This project explores how **agentic AI** can assist with database observability while maintaining strict security boundaries. It's a practical application of:
+## What's not implemented
 
-- **Distributed systems** — Go, NATS JetStream, microservices
-- **AI agent orchestration** — multi-agent workflows with specialized roles
-- **Privacy-preserving architectures** — PII masking, schema isolation, hybrid inference
+- Python AI agents (the "Librarian", "Coder", "Executor" agents)
+- Worker pool for concurrent log processing
+- Performance testing at scale
+- PostgreSQL metadata store
+- Shadow database sandbox for query validation
+- Consumer/worker to read from NATS
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-| **Ingestor** | Go 1.26 (high-concurrency HTTP API) |
-| **Message Broker** | NATS JetStream (persistent, at-least-once delivery) |
-| **AI Agents** | Python (PydanticAI / LangGraph) |
-| **Database** | PostgreSQL (metadata store + shadow DB) |
-| **Infrastructure** | Docker & Docker Compose |
+| Ingestor | Go 1.26 (net/http) |
+| Message Broker | NATS JetStream |
+| AI Agents | Python (not yet implemented) |
+| Database | PostgreSQL (not yet implemented) |
 
-## Architecture
+## Architecture (planned)
+
+When complete, the system will work like this:
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   App/DB    │────▶│  Go Ingestor │────▶│  NATS JetStream │
-│  (logs)     │     │  (PII Mask)  │     │  (db.logs.slow) │
-└─────────────┘     └──────────────┘     └────────┬────────┘
+App/DB logs ──▶ Go Ingestor (PII Mask) ──▶ NATS JetStream
                                                    │
-                              ┌────────────────────┼────────────────────┐
-                              ▼                    ▼                    ▼
-                       ┌───────────┐      ┌───────────┐       ┌───────────┐
-                       │ Librarian │─────▶│   Coder   │──────▶│ Executor  │
-                       │  (Agent A)│      │  (Agent B)│       │  (Agent C)│
-                       └───────────┘      └───────────┘       └───────────┘
+                      ┌────────────────────────────┼────────────────────┐
+                      ▼                            ▼                    ▼
+               Librarian Agent              Coder Agent          Executor Agent
+               (finds schemas)             (suggests SQL)       (validates safely)
 ```
 
-### The Multi-Agent Workflow
+### The Multi-Agent Workflow (planned)
 
-1. **Agent A (The Librarian)** — Receives a slow query, looks up relevant table schemas from the metadata store
-2. **Agent B (The Coder)** — Proposes optimized SQL or index suggestions based on the schema
-3. **Agent C (The Executor)** — Validates the optimization in a sandbox and runs `EXPLAIN ANALYZE`
+1. **Agent A (Librarian)** — Receives a slow query, looks up relevant table schemas
+2. **Agent B (Coder)** — Proposes optimized SQL or index suggestions
+3. **Agent C (Executor)** — Validates in a sandbox with `EXPLAIN ANALYZE`
+
+**Note:** This project targets **relational databases** (PostgreSQL, MySQL, etc.) since it works with SQL queries, table schemas, and `EXPLAIN ANALYZE`.
 
 ## Quick Start
 
@@ -67,7 +70,7 @@ docker-compose up -d
 go run main.go
 ```
 
-### Test It Out
+### Test It
 
 ```bash
 # Health check
@@ -83,38 +86,10 @@ curl -X POST http://localhost:8080/ingest \
   }'
 ```
 
-The SQL above will be automatically masked to:
+The SQL gets masked automatically:
 ```sql
 SELECT * FROM users WHERE email = "[REDACTED_EMAIL]"
 ```
-
-## Project Status
-
-### ✅ Phase 1: High-Speed Ingestion (Complete)
-- Go-based HTTP ingestor with PII masking
-- NATS JetStream integration with persistent storage
-- Benchmarked at 10,000+ logs/sec
-
-### 🚧 Phase 2: Python Worker & NATS Consumer (Planned)
-- NATS consumer using Python
-- "Librarian" agent for schema metadata
-
-### 📋 Phase 3: Reasoning & Validation (Planned)
-- "Coder" and "Executor" agents
-- Shadow DB sandbox for safe query validation
-- Automated optimization reports
-
-## Key Features
-
-### Security-First Design
-- **PII Masking** — Automatically redacts emails, SSNs, credit cards, UUIDs, and numeric IDs
-- **Schema-Blind Agents** — AI never accesses production data directly
-- **Hybrid Inference** — Sensitive tasks route to local models (Ollama), logic tasks to GPT-4o
-
-### Performance
-- **Go Workers** — Goroutine-based worker pool for parallel log processing
-- **NATS JetStream** — Low-latency message broker with persistence
-- **Horizontal Scaling** — Add more Python workers to scale reasoning capacity
 
 ## Running Tests
 
@@ -123,10 +98,18 @@ go test -v
 go test -bench=.  # Run benchmarks
 ```
 
+## Why I built this
+
+To learn:
+- Building services in Go
+- NATS JetStream messaging
+- AI agent system design
+- Privacy-preserving architectures
+
 ## License
 
-This project is licensed under the PolyForm Noncommercial License 1.0.0 — free for personal and research use. See [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built by Javier Martínez Segura — exploring the intersection of AI and database infrastructure.*
+*Learning project by Javier Martínez Segura.*
