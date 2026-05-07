@@ -92,20 +92,20 @@ func main() {
 }
 
 var (
-	emailRegex      = regexp.MustCompile(`[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}`)
+	emailRegex      = regexp.MustCompile(`'[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}'`)
 	idRegex         = regexp.MustCompile(`(=|IN)\s*\(?'?[0-9]+'?(,\s*'?[0-9]+'?)*\)?`)
-	ssnRegex        = regexp.MustCompile(`\d{3}-\d{2}-\d{4}`)
-	creditCardRegex = regexp.MustCompile(`\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}`)
-	uuidRegex       = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
+	ssnRegex        = regexp.MustCompile(`'\d{3}-\d{2}-\d{4}'`)
+	creditCardRegex = regexp.MustCompile(`'\d{4}-\d{4}-\d{4}-\d{4}'`)
+	uuidRegex       = regexp.MustCompile(`(?i)'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'`)
 )
 
 // maskPII is a fast utility to scrub sensitive data from SQL strings
 func maskPII(sql string) string {
 	sql = emailRegex.ReplaceAllString(sql, "[REDACTED_EMAIL]")
+	sql = ssnRegex.ReplaceAllString(sql, "[REDACTED_SSN]")
+	sql = creditCardRegex.ReplaceAllString(sql, "[REDACTED_CARD]")
+	sql = uuidRegex.ReplaceAllString(sql, "[REDACTED_UUID]")
 	sql = idRegex.ReplaceAllString(sql, "$1 [REDACTED_ID]")
-	sql = ssnRegex.ReplaceAllString(sql, "$1 [REDACTED_SSN]")
-	sql = creditCardRegex.ReplaceAllString(sql, "$1 [REDACTED_CARD]")
-	sql = uuidRegex.ReplaceAllString(sql, "$1 [REDACTED_UUID]")
 
 	return sql
 }
