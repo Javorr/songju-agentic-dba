@@ -5,7 +5,7 @@ down:
 	docker compose down
 
 run: up
-	go run main.go
+	go run ./cmd/web
 
 load-test:
 	k6 run tests/load_test.js
